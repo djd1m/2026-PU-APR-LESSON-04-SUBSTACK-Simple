@@ -8,6 +8,20 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+  cookies: {
+    sessionToken: {
+      name: "next-auth.session-token",
+      options: { httpOnly: true, sameSite: "lax" as const, path: "/", secure: false },
+    },
+    callbackUrl: {
+      name: "next-auth.callback-url",
+      options: { sameSite: "lax" as const, path: "/", secure: false },
+    },
+    csrfToken: {
+      name: "next-auth.csrf-token",
+      options: { httpOnly: true, sameSite: "lax" as const, path: "/", secure: false },
+    },
+  },
   providers: [
     CredentialsProvider({
       name: "credentials",

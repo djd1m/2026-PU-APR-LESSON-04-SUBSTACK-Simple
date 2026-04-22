@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { PostEditor } from "@/components/editor/PostEditor";
 
 export default function NewPostPage() {
@@ -15,14 +14,6 @@ export default function NewPostPage() {
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
-  const [hasPublication, setHasPublication] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    fetch("/api/publications")
-      .then((r) => r.json())
-      .then((pubs) => setHasPublication(Array.isArray(pubs) && pubs.length > 0))
-      .catch(() => setHasPublication(false));
-  }, []);
 
   const handleEditorChange = useCallback((json: any, html: string) => {
     setContent(json);
@@ -48,7 +39,6 @@ export default function NewPostPage() {
       return;
     }
 
-    // Save HTML too
     await fetch(`/api/posts/${post.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -75,36 +65,15 @@ export default function NewPostPage() {
       return;
     }
 
-    // Save HTML
     await fetch(`/api/posts/${post.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contentHtml }),
     });
 
-    // Publish
     await fetch(`/api/posts/${post.id}/publish`, { method: "POST" });
     setPublishing(false);
     router.push("/dashboard/posts");
-  }
-
-  if (hasPublication === null) return <div className="text-gray-500">Загрузка...</div>;
-
-  if (!hasPublication) {
-    return (
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white p-8 rounded-xl border border-gray-200 text-center">
-          <h2 className="text-lg font-semibold mb-2">Сначала создайте публикацию</h2>
-          <p className="text-gray-600 mb-4">Чтобы писать статьи, нужна публикация.</p>
-          <Link
-            href="/dashboard/settings"
-            className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
-          >
-            Создать публикацию
-          </Link>
-        </div>
-      </div>
-    );
   }
 
   return (
