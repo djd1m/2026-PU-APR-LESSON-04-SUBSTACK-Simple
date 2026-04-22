@@ -32,6 +32,9 @@
     "clsx": "^2.1",
     "slugify": "^1.6"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
