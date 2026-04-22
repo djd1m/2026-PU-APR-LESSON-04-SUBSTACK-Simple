@@ -8,8 +8,22 @@ export default function PostsListPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"all" | "DRAFT" | "PUBLISHED">("all");
+  const [hasPublication, setHasPublication] = useState<boolean | null>(null);
 
   useEffect(() => {
+    fetch("/api/publications")
+      .then((r) => r.json())
+      .then((pubs) => {
+        const hasPub = Array.isArray(pubs) && pubs.length > 0;
+        setHasPublication(hasPub);
+        if (!hasPub) setLoading(false);
+      })
+      .catch(() => { setHasPublication(false); setLoading(false); });
+  }, []);
+
+  useEffect(() => {
+    if (hasPublication !== true) return;
+    setLoading(true);
     const query = tab === "all" ? "" : `?status=${tab}`;
     fetch(`/api/posts${query}`)
       .then((r) => r.json())
@@ -18,7 +32,25 @@ export default function PostsListPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [tab]);
+  }, [tab, hasPublication]);
+
+  if (hasPublication === false) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-6">Статьи</h1>
+        <div className="bg-white p-8 rounded-xl border border-gray-200 text-center">
+          <h2 className="text-lg font-semibold mb-2">Сначала создайте публикацию</h2>
+          <p className="text-gray-600 mb-4">Чтобы писать статьи, нужна публикация.</p>
+          <Link
+            href="/dashboard/settings"
+            className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
+          >
+            Создать публикацию
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -40,7 +72,7 @@ export default function PostsListPage() {
         ].map((t) => (
           <button
             key={t.key}
-            onClick={() => { setTab(t.key); setLoading(true); }}
+            onClick={() => { setTab(t.key); }}
             className={`px-3 py-1 text-sm rounded-lg ${
               tab === t.key ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
