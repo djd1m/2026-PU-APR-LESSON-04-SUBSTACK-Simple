@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: substackru-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: substackru
+    ports:
+      - "5436:5432"
+    volumes:
+      - substackru_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: substackru-app
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/substackru?schema=public
+      NEXTAUTH_URL: http://212.192.0.33:3001
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev-secret-change-in-production-abc123}
+      RESEND_API_KEY: ${RESEND_API_KEY:-re_test_key}
+      EMAIL_FROM: ${EMAIL_FROM:-onboarding@resend.dev}
+      NEXT_PUBLIC_APP_URL: http://212.192.0.33:3001
+      NEXT_PUBLIC_APP_NAME: SubStack RU
+
+volumes:
+  substackru_pgdata:
