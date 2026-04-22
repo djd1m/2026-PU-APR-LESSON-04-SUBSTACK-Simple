@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://substackru.com/sitemap.xml
-
-User-agent: YandexBot
-Allow: /
-Crawl-delay: 1
