@@ -1,21 +1,30 @@
 import { prisma } from "@/lib/prisma";
 import type { MetadataRoute } from "next";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-  const publications = await prisma.publication.findMany({
-    select: { slug: true, updatedAt: true },
-  });
+  let publications: { slug: string; updatedAt: Date }[] = [];
+  let posts: { slug: string; publishedAt: Date | null; publication: { slug: string } }[] = [];
 
-  const posts = await prisma.post.findMany({
-    where: { status: "PUBLISHED" },
-    select: {
-      slug: true,
-      publishedAt: true,
-      publication: { select: { slug: true } },
-    },
-  });
+  try {
+    publications = await prisma.publication.findMany({
+      select: { slug: true, updatedAt: true },
+    });
+
+    posts = await prisma.post.findMany({
+      where: { status: "PUBLISHED" },
+      select: {
+        slug: true,
+        publishedAt: true,
+        publication: { select: { slug: true } },
+      },
+    });
+  } catch {
+    // DB not available at build time
+  }
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: appUrl, lastModified: new Date(), changeFrequency: "daily", priority: 1 },

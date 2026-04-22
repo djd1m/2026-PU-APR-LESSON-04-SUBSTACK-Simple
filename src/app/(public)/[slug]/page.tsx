@@ -5,6 +5,8 @@ import { formatDate } from "@/lib/utils";
 import { SubscribeWidget } from "@/components/subscribe/SubscribeWidget";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ slug: string }>;
 }

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { subscribeSchema } from "@/lib/validators";
-import { resend } from "@/lib/email/resend";
+import { getResend } from "@/lib/email/resend";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
     // Send confirmation email via Resend
     const confirmUrl = `${appUrl}/api/subscribers/confirm?token=${confirmToken}`;
-    await resend.emails.send({
+    await getResend().emails.send({
       from,
       to: data.email,
       subject: `Подтвердите подписку на «${publication?.name}»`,

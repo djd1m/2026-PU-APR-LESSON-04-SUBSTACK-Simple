@@ -20,13 +20,16 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Copy standalone app
 COPY --from=build /app/public ./public
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
+
+# Copy prisma files + full node_modules for prisma CLI (migrate deploy)
 COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=build /app/node_modules/prisma ./node_modules/prisma
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy entrypoint
 COPY --from=build /app/docker-entrypoint.sh ./docker-entrypoint.sh
 
 EXPOSE 3000

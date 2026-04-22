@@ -7,6 +7,8 @@ import { SubscribeWidget } from "@/components/subscribe/SubscribeWidget";
 import { PaywallBlock } from "@/components/posts/PaywallBlock";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ slug: string; postSlug: string }>;
 }

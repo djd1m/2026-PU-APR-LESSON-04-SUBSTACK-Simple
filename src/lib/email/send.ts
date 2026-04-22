@@ -1,4 +1,4 @@
-import { resend } from "./resend";
+import { getResend } from "./resend";
 
 const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -6,7 +6,7 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 export async function sendVerificationEmail(email: string, token: string) {
   const url = `${appUrl}/verify-email?token=${token}`;
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from,
     to: email,
     subject: "Подтвердите ваш email — SubStack RU",
@@ -35,7 +35,7 @@ export async function sendPostNotificationEmail(
   const unsubscribeUrl = `${appUrl}/api/subscribers/confirm?action=unsubscribe&token=${unsubscribeToken}`;
   const pixelUrl = `${appUrl}/api/analytics/track?type=open&id=${trackingPixelId}`;
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from,
     to,
     subject: post.title,
