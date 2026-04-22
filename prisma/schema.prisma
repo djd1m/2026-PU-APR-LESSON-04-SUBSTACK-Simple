@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ AUTH & USERS ============
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  avatar        String?
+  role          UserRole @default(READER)
+  emailVerified Boolean  @default(false)
+  verifyToken   String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  publications  Publication[]
+  subscriptions Subscription[]
+  subscribers   Subscriber[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  READER
+  AUTHOR
+  ADMIN
+}
+
+// ============ PUBLICATION ============
+
+model Publication {
+  id          String  @id @default(cuid())
+  authorId    String
+  name        String
+  slug        String  @unique
+  description String?
+  avatar      String?
+  coverImage  String?
+
+  paidEnabled  Boolean @default(false)
+  monthlyPrice Int?
+  yearlyPrice  Int?
+  currency     String  @default("RUB")
+
+  cloudpaymentsId String?
+  yookassaShopId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author        User           @relation(fields: [authorId], references: [id])
+  posts         Post[]
+  subscribers   Subscriber[]
+  subscriptions Subscription[]
+
+  @@map("publications")
+}
+
+// ============ POSTS ============
+
+model Post {
+  id            String      @id @default(cuid())
+  publicationId String
+  title         String
+  slug          String
+  subtitle      String?
+  content       Json?
+  contentHtml   String?
+  excerpt       String?
+  coverImage    String?
+
+  status      PostStatus  @default(DRAFT)
+  accessLevel AccessLevel @default(FREE)
+
+  metaTitle       String?
+  metaDescription String?
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  publication Publication @relation(fields: [publicationId], references: [id])
+  emailSends  EmailSend[]
+
+  @@unique([publicationId, slug])
+  @@index([publicationId, status, publishedAt])
+  @@map("posts")
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AccessLevel {
+  FREE
+  PAID
+}
+
+// ============ SUBSCRIBERS ============
+
+model Subscriber {
+  id               String           @id @default(cuid())
+  email            String
+  userId           String?
+  publicationId    String
+  tier             SubscriberTier   @default(FREE)
+  status           SubscriberStatus @default(PENDING)
+
+  confirmedAt      DateTime?
+  confirmToken     String?          @unique
+  unsubscribeToken String           @unique @default(cuid())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User?        @relation(fields: [userId], references: [id])
+  publication Publication  @relation(fields: [publicationId], references: [id])
+  emailSends  EmailSend[]
+
+  @@unique([email, publicationId])
+  @@index([publicationId, tier, status])
+  @@map("subscribers")
+}
+
+enum SubscriberTier {
+  FREE
+  PAID
+}
+
+enum SubscriberStatus {
+  PENDING
+  ACTIVE
+  UNSUBSCRIBED
+}
+
+// ============ PAID SUBSCRIPTIONS ============
+
+model Subscription {
+  id            String @id @default(cuid())
+  userId        String
+  publicationId String
+
+  provider           PaymentProvider
+  externalId         String?
+  status             SubscriptionStatus @default(ACTIVE)
+  plan               SubscriptionPlan
+
+  amountKopecks      Int
+  platformFeeKopecks Int
+
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelledAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id])
+  publication Publication @relation(fields: [publicationId], references: [id])
+  payments    Payment[]
+
+  @@unique([userId, publicationId])
+  @@map("subscriptions")
+}
+
+enum PaymentProvider {
+  CLOUDPAYMENTS
+  YOOKASSA
+  SBP
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum SubscriptionPlan {
+  MONTHLY
+  YEARLY
+}
+
+// ============ PAYMENTS ============
+
+model Payment {
+  id             String @id @default(cuid())
+  subscriptionId String
+
+  provider            PaymentProvider
+  externalId          String        @unique
+  amountKopecks       Int
+  platformFeeKopecks  Int
+  authorPayoutKopecks Int
+
+  status PaymentStatus
+  paidAt DateTime?
+
+  rawWebhook Json?
+
+  createdAt DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([subscriptionId])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+// ============ EMAIL TRACKING ============
+
+model EmailSend {
+  id           String @id @default(cuid())
+  postId       String
+  subscriberId String
+
+  status    EmailStatus @default(QUEUED)
+  sentAt    DateTime?
+  openedAt  DateTime?
+  clickedAt DateTime?
+
+  trackingPixelId String @unique @default(cuid())
+
+  createdAt DateTime @default(now())
+
+  post       Post       @relation(fields: [postId], references: [id])
+  subscriber Subscriber @relation(fields: [subscriberId], references: [id])
+
+  @@unique([postId, subscriberId])
+  @@index([postId])
+  @@index([subscriberId])
+  @@map("email_sends")
+}
+
+enum EmailStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  BOUNCED
+  FAILED
+}
