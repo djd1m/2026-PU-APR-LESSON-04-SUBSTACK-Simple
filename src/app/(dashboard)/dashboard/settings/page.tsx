@@ -22,7 +22,7 @@ export default function SettingsPage() {
     fetch("/api/publications")
       .then((r) => r.json())
       .then((pubs) => {
-        if (pubs.length > 0) {
+        if (Array.isArray(pubs) && pubs.length > 0) {
           const pub = pubs[0];
           setPublication(pub);
           setName(pub.name);
@@ -32,7 +32,8 @@ export default function SettingsPage() {
           setMonthlyPrice(pub.monthlyPrice ? String(pub.monthlyPrice / 100) : "");
         }
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   async function handleSave(e: React.FormEvent) {
